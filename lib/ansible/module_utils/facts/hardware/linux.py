@@ -92,6 +92,7 @@ class LinuxHardware(Hardware):
         cpu_facts = self.get_cpu_facts(collected_facts=collected_facts)
         memory_facts = self.get_memory_facts()
         dmi_facts = self.get_dmi_facts()
+        devicetree_facts = self.get_devicetree_facts()
         device_facts = self.get_device_facts()
         uptime_facts = self.get_uptime_facts()
         lvm_facts = self.get_lvm_facts()
@@ -105,6 +106,7 @@ class LinuxHardware(Hardware):
         hardware_facts.update(cpu_facts)
         hardware_facts.update(memory_facts)
         hardware_facts.update(dmi_facts)
+        hardware_facts.update(devicetree_facts)
         hardware_facts.update(device_facts)
         hardware_facts.update(uptime_facts)
         hardware_facts.update(lvm_facts)
@@ -648,6 +650,22 @@ class LinuxHardware(Hardware):
                     block_dev_dict['holders'].append(name)
                 else:
                     block_dev_dict['holders'].append(folder)
+
+    def get_devicetree_facts(self):
+        devicetree_facts = {}
+        dtb_path = "/sys/firmware/devicetree/base"
+        try:
+            dt_base_entries = os.listdir(dtb_path)
+        except OSError:
+            return devicetree_facts
+        if not dt_base_entries:
+            return devicetree_facts
+        if 'model' in dt_base_entries:
+            devicetree_facts['dt_model'] = get_file_content(dtb_path + "/model").rstrip(u'\0')
+        if 'compatible' in dt_base_entries:
+            devicetree_facts['dt_compatible'] = get_file_content(dtb_path + "/compatible").split(u'\0')[:-1]
+        return devicetree_facts
+
 
     def get_device_facts(self):
         device_facts = {}
